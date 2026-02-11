@@ -17,14 +17,14 @@ jobs:
     working_directory: ~/<< pipeline.parameters.service-name >>
     steps:
       - checkout
-      - go/install:
-          version: "1.24.1"
-      - go/load-cache
-      - go/mod-download
-      - go/save-cache
-      - go/test:
-          race: true
-          covermode: "atomic"
+      - go/with-cache:
+          steps:
+            - go/install:
+                version: "1.24.1"
+            - go/mod-download
+            - go/test:
+                covermode: atomic
+                race: true
 
 workflows:
   test:
