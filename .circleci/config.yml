@@ -8,7 +8,7 @@ parameters:
 orbs:
   pinwheel-cicd: underdog-tech/pinwheel-cicd-orb@1.4
   macos: circleci/macos@2.4.0
-  go: circleci/go@1.7.3
+  go: circleci/go@3.0.3
 
 jobs:
   test:
