@@ -98,7 +98,7 @@ func TestWebSocketEchoRealWebserver(t *testing.T) {
 		tls_client.WithTlsClient(client),
 		tls_client.WithUrl(url),
 		tls_client.WithHeaders(http.Header{}),
-		tls_client.WithHandshakeTimeoutMilliseconds(5000),
+		tls_client.WithHandshakeTimeoutMilliseconds(10000),
 	}
 
 	ws, err := tls_client.NewWebsocket(nil, websocketOptions...)
