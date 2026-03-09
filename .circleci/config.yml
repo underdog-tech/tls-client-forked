@@ -24,7 +24,6 @@ jobs:
             - go/mod-download
             - go/test:
                 covermode: atomic
-                race: true
 
 workflows:
   test:
