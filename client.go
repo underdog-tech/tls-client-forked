@@ -106,13 +106,6 @@ func NewHttpClient(logger Logger, options ...HttpClientOption) (HttpClient, erro
 		return nil, err
 	}
 
-	client, dialer, bandwidthTracker, clientProfile, err := buildFromConfig(logger, config)
-	if err != nil {
-		return nil, err
-	}
-
-	config.clientProfile = clientProfile
-
 	if config.debug {
 		if logger == nil {
 			logger = NewLogger()
@@ -124,6 +117,13 @@ func NewHttpClient(logger Logger, options ...HttpClientOption) (HttpClient, erro
 	if logger == nil {
 		logger = NewNoopLogger()
 	}
+
+	client, dialer, bandwidthTracker, clientProfile, err := buildFromConfig(logger, config)
+	if err != nil {
+		return nil, err
+	}
+
+	config.clientProfile = clientProfile
 
 	return &httpClient{
 		Client:           *client,
@@ -316,7 +316,7 @@ func (c *httpClient) SetProxy(proxyUrl string) error {
 
 	err := c.applyProxy()
 	if err != nil {
-		c.logger.Error("failed to apply new proxy. rolling back to previous used proxy: %w", err)
+		c.logger.Error("failed to apply new proxy. rolling back to previous used proxy: %v", err)
 		c.config.proxyUrl = currentProxy
 
 		return c.applyProxy()
@@ -598,21 +598,38 @@ func (c *httpClient) do(req *http.Request) (*http.Response, error) {
 		}
 
 		if resp.Body != nil {
-			// Automatically detect the correct charset
-			chr, err := charset.NewReader(resp.Body, resp.Header.Get("Content-Type"))
-			if err != nil {
+			var respBodyBytes []byte
+			var bodyReader io.Reader
+
+			// Try to preview a single byte of the body reader to prevent EOF caused by empty bodies.
+			// This is probably the best way of reliably detecting empty response bodies,
+			// especially when the content-length response header is not present.
+			firstByte := make([]byte, 1)
+			n, err := io.ReadFull(resp.Body, firstByte)
+			if err != nil && !errors.Is(err, io.EOF) {
 				return nil, err
 			}
 
-			buf, err := io.ReadAll(chr)
-			if err != nil {
-				return nil, err
+			if n == 0 { // No response body exists
+				respBodyBytes = nil
+			} else {
+				bodyReader = io.MultiReader(bytes.NewReader(firstByte[:n]), resp.Body)
+				// Automatically detect the correct charset
+				bodyReader, err = charset.NewReader(bodyReader, resp.Header.Get("Content-Type"))
+				if err != nil {
+					return nil, err
+				}
+
+				respBodyBytes, err = io.ReadAll(bodyReader)
+				if err != nil {
+					return nil, err
+				}
+				defer resp.Body.Close()
 			}
-			defer resp.Body.Close()
 
-			responseBody := io.NopCloser(bytes.NewBuffer(buf))
+			responseBody := io.NopCloser(bytes.NewBuffer(respBodyBytes))
 
-			finalResponse := string(buf)
+			finalResponse := string(respBodyBytes)
 
 			c.logger.Debug("response body payload: %s", finalResponse)
 
