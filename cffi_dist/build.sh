@@ -31,7 +31,7 @@ echo 'Build Linux Ubuntu'
 # GOOS=linux CGO_ENABLED=1 GOARCH=amd64 CC="x86_64-linux-musl-gcc" go build -buildmode=c-shared -o ./dist/tls-client-linux-amd64.so
 # Make sure to first build the image based on the Dockerfile.ubuntu.compile in this directory.
 docker build  --platform linux/amd64 . -t tls-client-ubuntu-go-1.20
-docker run -v $PWD/../:/tls-client tls-client-ubuntu-go-1.20 bash -c "cd /tls-client/cffi_dist && GOOS=linux CGO_ENABLED=1 GOARCH=amd64 go build -buildmode=c-shared -o /tls-client/cffi_dist/pinwheel_dist/tls-client-linux-ubuntu-amd64-.so"
+docker run -v $PWD/../:/tls-client tls-client-ubuntu-go-1.20 bash -c "cd /tls-client/cffi_dist && GOOS=linux CGO_ENABLED=1 GOARCH=amd64 CC=x86_64-linux-gnu-gcc go build -buildmode=c-shared -o /tls-client/cffi_dist/pinwheel_dist/tls-client-linux-ubuntu-amd64-.so"
 
 
 # # CC is needed when you cross compile from OSX to Windows
